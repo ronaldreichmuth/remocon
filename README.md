@@ -1,14 +1,14 @@
-# Heizung – Warmwasser Temperaturlogger
+# Heizung – Hot Water Temperature Logger
 
-Liest alle 5 Minuten die Warmwassertemperatur von [remocon-net.remotethermo.com](https://www.remocon-net.remotethermo.com) und zeigt den Verlauf der letzten 3 Tage im Browser.
+Reads the hot water temperature every 5 minutes from [remocon-net.remotethermo.com](https://www.remocon-net.remotethermo.com) and displays the last 3 days in a browser chart.
 
-## Voraussetzungen
+## Requirements
 
-- Docker & Docker Compose (z.B. Synology NAS mit Container Manager)
-- Zugangsdaten für remocon-net.remotethermo.com
-- Gateway ID (sichtbar im Web-Interface nach dem Login)
+- Docker & Docker Compose (e.g. Synology NAS with Container Manager)
+- Login credentials for remocon-net.remotethermo.com
+- Gateway ID (visible in the web interface after login)
 
-## Installation
+## Setup
 
 ```bash
 git clone https://github.com/ronaldreichmuth/remocon.git
@@ -16,27 +16,27 @@ cd remocon
 cp .env.example .env
 ```
 
-`.env` öffnen und Zugangsdaten eintragen:
+Edit `.env` and fill in your credentials:
 ```
-EMAIL=deine@email.ch
-PASSWORD=dein_passwort
-GATEWAY_ID=deine_gateway_id
+EMAIL=your@email.com
+PASSWORD=your_password
+GATEWAY_ID=your_gateway_id
 ```
 
-## Starten
+## Start
 
 ```bash
 sudo docker-compose up -d
 ```
 
-Webinterface: **http://nas-ip:5000**
+Web interface: **http://nas-ip:5000**
 
-## Stoppen
+## Stop
 
 ```bash
 sudo docker-compose down
 ```
 
-## Daten
+## Data
 
-Die SQLite-Datenbank wird im Docker-Volume `heizung_data` gespeichert und bleibt bei Updates erhalten.
+The SQLite database is stored in the Docker volume `heizung_data` and persists across updates.
