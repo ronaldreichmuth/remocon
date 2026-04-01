@@ -1,0 +1,14 @@
+services:
+  heizung:
+    build: .
+    container_name: heizung
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    volumes:
+      - heizung_data:/data
+    env_file:
+      - .env
+
+volumes:
+  heizung_data:
