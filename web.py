@@ -96,7 +96,10 @@ def api_data():
         (seit.strftime("%Y-%m-%d %H:%M:%S"),),
     ).fetchall()
     con.close()
-    return jsonify([{"timestamp": r[0], "temp_c": r[1]} for r in rows])
+    def to_iso(ts_str):
+        return datetime.strptime(ts_str, "%Y-%m-%d %H:%M:%S").astimezone().isoformat()
+
+    return jsonify([{"timestamp": to_iso(r[0]), "temp_c": r[1]} for r in rows])
 
 
 if __name__ == "__main__":
