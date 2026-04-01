@@ -1,6 +1,6 @@
 """
 Web-Interface: Temperaturverlauf der letzten 3 Tage im Browser.
-Starten: .venv/bin/python web.py  →  http://localhost:5000
+Starten: .venv/bin/python web.py  →  http://localhost:5005
 """
 
 import sqlite3
@@ -100,4 +100,4 @@ def api_data():
 
 
 if __name__ == "__main__":
-    app.run(debug=False, port=5000)
+    app.run(host="0.0.0.0", debug=False, port=5005)

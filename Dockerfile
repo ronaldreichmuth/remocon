@@ -11,6 +11,6 @@ RUN chmod +x start.sh
 
 VOLUME ["/data"]
 
-EXPOSE 5000
+EXPOSE 5005
 
 CMD ["./start.sh"]
