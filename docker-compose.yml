@@ -4,7 +4,7 @@ services:
     container_name: heizung
     restart: unless-stopped
     ports:
-      - "5000:5000"
+      - "5005:5005"
     volumes:
       - heizung_data:/data
     env_file:
