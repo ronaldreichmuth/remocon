@@ -39,9 +39,16 @@ HTML = """
         <canvas id="chart-ww" height="100"></canvas>
     </div>
 
-    <div class="card">
+    <div class="card" style="margin-bottom:1.5rem;">
         <div class="current" style="color:#4a90d9;" id="current-out">– <span>°C Aussentemperatur</span></div>
         <canvas id="chart-out" height="100"></canvas>
+    </div>
+
+    <div class="card">
+        <div style="margin-bottom:1rem; font-size:1.1rem; font-weight:bold; color:#555;">
+            Wärmepumpe: <span id="badge-pump" style="display:inline-block; padding:0.2rem 0.8rem; border-radius:999px; font-size:1rem;">–</span>
+        </div>
+        <canvas id="chart-pump" height="100"></canvas>
         <div class="meta" id="meta">wird geladen…</div>
     </div>
 
@@ -80,6 +87,20 @@ HTML = """
             options: options('°C'),
         });
 
+        const chartPump = new Chart(document.getElementById('chart-pump').getContext('2d'), {
+            type: 'bar',
+            data: { datasets: [{ data: [], borderWidth: 0 }]},
+            options: {
+                scales: {
+                    x: { type: 'time', time: { unit: 'hour', displayFormats: { hour: 'dd.MM HH:mm' } }, ticks: { maxTicksLimit: 12 } },
+                    y: { min: 0, max: 1, ticks: { stepSize: 1, callback: v => v === 1 ? 'AN' : 'AUS' }, grid: { display: false } }
+                },
+                plugins: { legend: { display: false } },
+                animation: false,
+                aspectRatio: 1.25,
+            }
+        });
+
         async function load() {
             const res = await fetch('/api/data');
             const rows = await res.json();
@@ -91,11 +112,23 @@ HTML = """
             chartOut.data.datasets[0].data = outRows.map(r => ({ x: r.timestamp, y: r.outside_temp }));
             chartOut.update();
 
+            const pumpRows = rows.filter(r => r.heat_pump_on !== null);
+            chartPump.data.datasets[0].data = pumpRows.map(r => ({ x: r.timestamp, y: r.heat_pump_on }));
+            chartPump.data.datasets[0].backgroundColor = pumpRows.map(r => r.heat_pump_on ? 'rgba(39,174,96,0.7)' : 'rgba(224,90,43,0.4)');
+            chartPump.update();
+
             if (rows.length > 0) {
                 const last = rows[rows.length - 1];
                 document.getElementById('current-ww').innerHTML = `${last.temp_c.toFixed(1)} <span>°C Warmwasser</span>`;
                 if (last.outside_temp !== null)
                     document.getElementById('current-out').innerHTML = `${last.outside_temp.toFixed(1)} <span>°C Aussentemperatur</span>`;
+                if (last.heat_pump_on !== null) {
+                    const on = last.heat_pump_on === 1;
+                    const badge = document.getElementById('badge-pump');
+                    badge.textContent = on ? 'AN' : 'AUS';
+                    badge.style.background = on ? '#e8f8ee' : '#fdecea';
+                    badge.style.color = on ? '#27ae60' : '#e05a2b';
+                }
             }
             document.getElementById('meta').textContent =
                 `${rows.length} Messwerte · aktualisiert: ${new Date().toLocaleTimeString('de-CH')}`;
@@ -119,7 +152,7 @@ def api_data():
     seit = datetime.now() - timedelta(days=3)
     con = sqlite3.connect(DB_FILE)
     rows = con.execute(
-        "SELECT timestamp, temp_c, outside_temp FROM warmwasser WHERE timestamp >= ? ORDER BY timestamp",
+        "SELECT timestamp, temp_c, outside_temp, heat_pump_on FROM warmwasser WHERE timestamp >= ? ORDER BY timestamp",
         (seit.strftime("%Y-%m-%d %H:%M:%S"),),
     ).fetchall()
     con.close()
@@ -127,7 +160,7 @@ def api_data():
     def to_iso(ts_str):
         return datetime.strptime(ts_str, "%Y-%m-%d %H:%M:%S").astimezone().isoformat()
 
-    return jsonify([{"timestamp": to_iso(r[0]), "temp_c": r[1], "outside_temp": r[2]} for r in rows])
+    return jsonify([{"timestamp": to_iso(r[0]), "temp_c": r[1], "outside_temp": r[2], "heat_pump_on": r[3]} for r in rows])
 
 
 if __name__ == "__main__":
