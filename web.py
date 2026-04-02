@@ -58,6 +58,7 @@ HTML = """
                 },
                 plugins: { legend: { display: false } },
                 animation: false,
+                aspectRatio: 1.5,
             }
         });
 
