@@ -88,8 +88,16 @@ HTML = """
         });
 
         const chartPump = new Chart(document.getElementById('chart-pump').getContext('2d'), {
-            type: 'bar',
-            data: { datasets: [{ data: [], borderWidth: 0 }]},
+            type: 'line',
+            data: { datasets: [{
+                data: [],
+                borderColor: '#27ae60',
+                backgroundColor: 'rgba(39,174,96,0.15)',
+                fill: true,
+                stepped: 'before',
+                pointRadius: 0,
+                borderWidth: 2,
+            }]},
             options: {
                 scales: {
                     x: { type: 'time', time: { unit: 'hour', displayFormats: { hour: 'dd.MM HH:mm' } }, ticks: { maxTicksLimit: 12 } },
@@ -114,7 +122,6 @@ HTML = """
 
             const pumpRows = rows.filter(r => r.heat_pump_on !== null);
             chartPump.data.datasets[0].data = pumpRows.map(r => ({ x: r.timestamp, y: r.heat_pump_on }));
-            chartPump.data.datasets[0].backgroundColor = pumpRows.map(r => r.heat_pump_on ? 'rgba(39,174,96,0.7)' : 'rgba(224,90,43,0.4)');
             chartPump.update();
 
             if (rows.length > 0) {
