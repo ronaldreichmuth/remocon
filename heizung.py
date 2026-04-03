@@ -43,8 +43,10 @@ def get_plant_data(session: requests.Session):
         timeout=30,
     )
     resp.raise_for_status()
-    plant = resp.json().get("data", {}).get("plantData", {})
-    return plant.get("dhwStorageTemp"), plant.get("outsideTemp"), plant.get("heatPumpOn")
+    data = resp.json().get("data", {})
+    plant = data.get("plantData", {})
+    zone = data.get("zoneData", {})
+    return plant.get("dhwStorageTemp"), plant.get("outsideTemp"), zone.get("isHeatingActive")
 
 
 def init_db():
@@ -57,7 +59,7 @@ def init_db():
             outside_temp  REAL
         )
     """)
-    for col in ["outside_temp REAL", "heat_pump_on INTEGER"]:
+    for col in ["outside_temp REAL", "heat_pump_on INTEGER", "is_heating_active INTEGER"]:
         try:
             con.execute(f"ALTER TABLE warmwasser ADD COLUMN {col}")
         except Exception:
@@ -66,11 +68,11 @@ def init_db():
     con.close()
 
 
-def insert_db(timestamp: str, temp: float, outside_temp, heat_pump_on):
+def insert_db(timestamp: str, temp: float, outside_temp, is_heating_active):
     con = sqlite3.connect(DB_FILE)
     con.execute(
-        "INSERT INTO warmwasser (timestamp, temp_c, outside_temp, heat_pump_on) VALUES (?, ?, ?, ?)",
-        (timestamp, temp, outside_temp, int(heat_pump_on) if heat_pump_on is not None else None),
+        "INSERT INTO warmwasser (timestamp, temp_c, outside_temp, is_heating_active) VALUES (?, ?, ?, ?)",
+        (timestamp, temp, outside_temp, int(is_heating_active) if is_heating_active is not None else None),
     )
     con.commit()
     con.close()
@@ -92,8 +94,8 @@ def run():
 
             if temp is not None:
                 outside_str = f"  Aussen: {outside:.1f} °C" if outside is not None else ""
-                pump_str = f"  Wärmepumpe: {'AN' if pump else 'AUS'}" if pump is not None else ""
-                print(f"{timestamp}  Warmwasser: {temp:.1f} °C{outside_str}{pump_str}")
+                heating_str = f"  Heizung aktiv: {'JA' if pump else 'NEIN'}" if pump is not None else ""
+                print(f"{timestamp}  Warmwasser: {temp:.1f} °C{outside_str}{heating_str}")
                 insert_db(timestamp, temp, outside, pump)
             else:
                 print(f"{timestamp}  Temperatur nicht verfügbar (kein dhwStorageTemp in Antwort)")

@@ -32,7 +32,7 @@ HTML = """
     </style>
 </head>
 <body>
-    <h1>Heizung – Temperaturverlauf letzte 3 Tage</h1>
+    <h1>Heizung – Temperaturverlauf letzte 24 Stunden</h1>
 
     <div class="card" style="margin-bottom:1.5rem;">
         <div class="current" id="current-ww">– <span>°C Warmwasser</span></div>
@@ -46,7 +46,7 @@ HTML = """
 
     <div class="card">
         <div style="margin-bottom:1rem; font-size:1.1rem; font-weight:bold; color:#555;">
-            Wärmepumpe: <span id="badge-pump" style="display:inline-block; padding:0.2rem 0.8rem; border-radius:999px; font-size:1rem;">–</span>
+            Heizung aktiv: <span id="badge-pump" style="display:inline-block; padding:0.2rem 0.8rem; border-radius:999px; font-size:1rem;">–</span>
         </div>
         <canvas id="chart-pump" height="100"></canvas>
         <div class="meta" id="meta">wird geladen…</div>
@@ -120,8 +120,8 @@ HTML = """
             chartOut.data.datasets[0].data = outRows.map(r => ({ x: r.timestamp, y: r.outside_temp }));
             chartOut.update();
 
-            const pumpRows = rows.filter(r => r.heat_pump_on !== null);
-            chartPump.data.datasets[0].data = pumpRows.map(r => ({ x: r.timestamp, y: r.heat_pump_on }));
+            const pumpRows = rows.filter(r => r.is_heating_active !== null);
+            chartPump.data.datasets[0].data = pumpRows.map(r => ({ x: r.timestamp, y: r.is_heating_active }));
             chartPump.update();
 
             if (rows.length > 0) {
@@ -129,8 +129,8 @@ HTML = """
                 document.getElementById('current-ww').innerHTML = `${last.temp_c.toFixed(1)} <span>°C Warmwasser</span>`;
                 if (last.outside_temp !== null)
                     document.getElementById('current-out').innerHTML = `${last.outside_temp.toFixed(1)} <span>°C Aussentemperatur</span>`;
-                if (last.heat_pump_on !== null) {
-                    const on = last.heat_pump_on === 1;
+                if (last.is_heating_active !== null) {
+                    const on = last.is_heating_active === 1;
                     const badge = document.getElementById('badge-pump');
                     badge.textContent = on ? 'AN' : 'AUS';
                     badge.style.background = on ? '#e8f8ee' : '#fdecea';
@@ -156,10 +156,10 @@ def index():
 
 @app.route("/api/data")
 def api_data():
-    seit = datetime.now() - timedelta(days=3)
+    seit = datetime.now() - timedelta(hours=24)
     con = sqlite3.connect(DB_FILE)
     rows = con.execute(
-        "SELECT timestamp, temp_c, outside_temp, heat_pump_on FROM warmwasser WHERE timestamp >= ? ORDER BY timestamp",
+        "SELECT timestamp, temp_c, outside_temp, is_heating_active FROM warmwasser WHERE timestamp >= ? ORDER BY timestamp",
         (seit.strftime("%Y-%m-%d %H:%M:%S"),),
     ).fetchall()
     con.close()
@@ -167,7 +167,7 @@ def api_data():
     def to_iso(ts_str):
         return datetime.strptime(ts_str, "%Y-%m-%d %H:%M:%S").astimezone().isoformat()
 
-    return jsonify([{"timestamp": to_iso(r[0]), "temp_c": r[1], "outside_temp": r[2], "heat_pump_on": r[3]} for r in rows])
+    return jsonify([{"timestamp": to_iso(r[0]), "temp_c": r[1], "outside_temp": r[2], "is_heating_active": r[3]} for r in rows])
 
 
 if __name__ == "__main__":
